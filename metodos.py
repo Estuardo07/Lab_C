@@ -1,211 +1,126 @@
-def lectura(file_path):
-    results = []
-    with open(file_path, 'r') as f:
-        content = []
-        for line in f:
-            start_idx = line.find('(*')
-            end_idx = line.find('*)')
-            while start_idx != -1 and end_idx != -1:
-                content.append(line[start_idx+2:end_idx])
-                line = line[end_idx+2:]
-                start_idx = line.find('(*')
-                end_idx = line.find('*)')
-            if content:
-                results.append(''.join(content))
-                content = []
-    return results
+import codecs
+import pickle
+from clases import VarType, Variable
+from re import findall
 
-def new_txt(cadena, a_reemplazar, nuevo_texto):
-    lista_cadena = list(cadena)
-    lista_a_reemplazar = list(a_reemplazar)
-    lista_nuevo_texto = list(nuevo_texto)
-    len_a_reemplazar = len(lista_a_reemplazar)
-    len_nuevo_texto = len(lista_nuevo_texto)
-    len_cadena = len(lista_cadena)
-    
-    i = 0
-    while i < len_cadena:
-        if lista_cadena[i:i+len_a_reemplazar] == lista_a_reemplazar:
-            lista_cadena[i:i+len_a_reemplazar] = lista_nuevo_texto
-            len_cadena = len_cadena - len_a_reemplazar + len_nuevo_texto
-            i = i + len_nuevo_texto
-        else:
-            i = i + 1
-            
-    return ''.join(lista_cadena)
+CONTEXT_WORDS = ['ANY']
+ANY_SET = set([chr(char) for char in range(0, 256)])
 
-def miSplit(string, separator):
-    result = []
-    start = 0
-    for i in range(len(string)):
-        if string[i:i+len(separator)] == separator:
-            result.append(string[start:i])
-            start = i+len(separator)
-    result.append(string[start:])
-    return result
 
-def separar_txt(cadena, separador):
-    lista_cadena = list(cadena)
-    lista_separador = list(separador)
-    len_separador = len(lista_separador)
-    len_cadena = len(lista_cadena)
-    
-    resultado = []
-    palabra_actual = []
-    
-    i = 0
-    while i < len_cadena:
-        if lista_cadena[i:i+len_separador] == lista_separador:
-            resultado.append(''.join(palabra_actual))
-            palabra_actual = []
-            i = i + len_separador
-        else:
-            palabra_actual.append(lista_cadena[i])
-            i = i + 1
-    
-    resultado.append(''.join(palabra_actual))
-            
-    return resultado
+def GetTextInsideSymbols(string, init_symbol, end_symbol):
+    start = string.find(init_symbol)
+    end = string.find(end_symbol)
 
-def removeOr(texto):
-    if texto and texto[0] == "|":
-        return texto[1:]
-    else:
-        return texto
-    
-def contarSimbolos(filename):
-    word_counts = {}
+    if start == -1 or end == -1:
+        return None
 
-    with open(filename, 'r') as f:
-        for line in f:
-            word = ""
-            pipe_found = False
+    if string.count(init_symbol) != 1 or string.count(end_symbol) != 1:
+        return None
 
-            for c in line:
-                if c == '|':
-                    pipe_found = True
-                    continue
-                elif pipe_found and not c.isspace():
-                    word += c
-                elif pipe_found and c.isspace():
-                    if word in word_counts:
-                        word_counts[word] += 1
-                    else:
-                        word_counts[word] = 1
-                    word = ""
-                    pipe_found = False
+    return string[start+1:end]
 
-            if word:
-                if word in word_counts:
-                    word_counts[word] += 1
-                else:
-                    word_counts[word] = 1
 
-    return word_counts
+def GetTextFromDoubleQuotes(string):
+    text = findall('"([^"]*)"', string)
 
-def readRules(filename):
-    lines = []
-    with open(filename, "r") as file:
-        found_tokens_rule = False
-        for line in file:
-            if found_tokens_rule:
-                if line.startswith(" "):
-                    lines.append(line.strip())
-                else:
-                    break
-            elif line.startswith("Rule Tokens = "):
-                found_tokens_rule = True
-    return lines
+    if not text:
+        return None
+    if len(text) > 1:
+        return None
 
-def vaciarLlaves(texto):
-    nuevo_texto = ""
-    entre_llaves = False
-    
-    for caracter in texto:
-        if caracter == '{':
-            entre_llaves = True
-        elif caracter == '}':
-            entre_llaves = False
-        elif not entre_llaves:
-            nuevo_texto += caracter
-    
-    return nuevo_texto
+    return text[0]
 
-def ignorarComentarios(texto):
-    nuevo_texto = ""
-    entre_llaves = False
-    
-    for caracter in texto:
-        if caracter == '(*':
-            entre_llaves = True
-        elif caracter == '*)':
-            entre_llaves = False
-        elif not entre_llaves:
-            nuevo_texto += caracter
-    
-    return nuevo_texto
 
-def idRule(texto):
-    encontrado_id = False
-    nueva_cadena = ""
-    for c in texto:
-        if c == "i":
-            encontrado_id = True
-        elif encontrado_id and c == "d":
-            nueva_cadena = nueva_cadena + "id"
-            break
-        else:
-            nueva_cadena = nueva_cadena + c
-    return nueva_cadena
+def GetTextFromSingleQuotes(string):
+    text = findall("'([^']*)'", string)
 
-def ignore_ws(texto):
-    encontrado_id = False
-    nueva_cadena = ""
-    for c in texto:
-        if c == "i":
-            encontrado_id = True
-        elif encontrado_id and c == "d":
-            nueva_cadena = nueva_cadena + "ws"
-            break
-        else:
-            nueva_cadena = nueva_cadena + c
-    return nueva_cadena
+    if not text:
+        return None
+    if len(text) > 1:
+        return None
 
-def addAppend(re):
-	op = ["(","|",".",")"]
-	aux = ""
-	i = 0
-	n = 0
-	while (i + 1) < len(re):
-		
-		if re[i] in op:
-			if re[i] == ")" and re[i+1] == "+" or re[i+1] == "*":
-				aux += re[i]
-				aux += re[i+1]
-			elif re[i] == ")" and re[i+1] not in op and re[i+1] != "+" and re[i+1] != "*":
-				aux += re[i]
-				aux+= "."
-			else:
-				aux += re[i]
+    return str(text[0])
 
-		elif re[i] == "+" or re[i] == "*":
-			if(re[i+1] not in op) or re[i+1] == "(":
-				aux+= "."
-			
-			
-		elif re[i] not in op and re[i + 1] not in op and re[i + 1] != "*" and re[i + 1] != "+":
-			aux += re[i]
-			aux += "."
-					
-		elif re[i] not in op and re[i + 1] == "*" or re[i + 1] == "+":
-			aux += re[i]
-			aux += re[i+1]
-				
-		elif (re[i] not in op and re[i+1] in op):
-			aux += re[i]
-	
-		i+=1
-		n = i
-		if re[i] not in op and re[i] != "*" and re[i] != "+" and n + 1 == len(re):
-			aux += re[i]
-	return aux
+
+def GetNoAlpha(string):
+    pos = 1
+    while pos < len(string) and (string[pos].isalpha() or string[pos] == '|'):
+        pos += 1
+    return pos if pos < len(string) else None
+
+
+def IdentExists(ident, char_set):
+    try:
+        next(filter(lambda x: x.ident == ident, char_set))
+        return True
+    except StopIteration:
+        return False
+
+
+def GetIdentValue(ident, char_set):
+    try:
+        ident = next(filter(lambda x: x.ident == ident, char_set))
+        return ident.value
+    except StopIteration:
+        return None
+
+
+def GetCharValue(char):
+    # Finally, we check for the text inside the parenthesis
+    value = GetTextInsideSymbols(char, '(', ')')
+
+    # Check for missing or extra parenthesis
+    if value == None:
+        raise Exception(
+            'In CHARACTERS, char is not defined correctly: missplaced parenthesis')
+
+    # Check if the value is a digit
+    if not value.isdigit():
+        raise Exception(
+            'In CHARACTERS, char is not defined correctly: non-digit CHR value')
+
+    return chr(int(value))
+
+
+def GetElementType(string, char_set):
+
+    if string.count('"') == 2:
+        string = string.replace('\"', '')
+        val = set([chr(ord(char)) for char in string])
+        return Variable(VarType.STRING, val)
+
+    if string.count('\'') == 2:
+        char = GetTextFromSingleQuotes(string)
+        try:
+            char = codecs.decode(char, 'unicode_escape')
+            ord_ = ord(char)
+        except:
+            raise Exception(f'Unvalid char in GetElementType: {string}')
+
+        new_set = set(chr(ord_))
+        return Variable(VarType.CHAR, new_set)
+
+    if string in CONTEXT_WORDS:
+        if 'ANY' == string:
+            return Variable(VarType.STRING, ANY_SET)
+
+    if string.isdigit():
+        return Variable(VarType.NUMBER, string)
+
+    if IdentExists(string, char_set):
+        return Variable(VarType.IDENT, GetIdentValue(string, char_set), string)
+
+    if 'CHR' in string:
+        char = set(GetCharValue(string))
+        return Variable(VarType.CHAR, char)
+
+
+def WriteToFile(filename: str, content: str):
+    with open(filename, 'w') as _file:
+        _file.write(content)
+
+    return f'File "{filename}" created!'
+
+
+def DumpAutomata(automata):
+    pickle.dump(automata, open('./output/automata.p', 'wb'))
