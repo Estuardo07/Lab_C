@@ -149,8 +149,6 @@ aut = Automata()''')
         self.WriteLine('import sys', newlines=2)
         self.WriteLine('global aut', newlines=2)
 
-        # self.WriteAutomataClass()
-
         self.WriteReadFileFunction()
 
         self.WriteEvalFunction()

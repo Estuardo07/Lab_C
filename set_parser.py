@@ -1,13 +1,11 @@
 import codecs
 from clases import (
     Variable,
-    VarType,
-    Character
+    VarType
 )
 
 from metodos import (
     GetElementType,
-    GetIdentValue,
     GetCharValue
 )
 

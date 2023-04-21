@@ -1,5 +1,3 @@
-from metodos import WriteToFile
-
 RAW_STATES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
 

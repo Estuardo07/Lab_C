@@ -68,7 +68,6 @@ class CFG:
 
                 elif 'TOKENS' in self.curr_line:
                     self.Next()
-                    # print('\n', '='*20, 'TOKENS', '='*20)
                     self.ReadSection('TOKENS')
 
                 elif 'IGNORE' in self.curr_line:
@@ -104,10 +103,6 @@ class CFG:
                 curr_set = curr_set[:-1]
                 self.GetKeyValue(curr_set, section)
                 self.Next()
-
-            # elif '=' in curr_set and not '.' == curr_set[-1]:
-            #     print('\nWARNING: Statement without ending (Ignored):', curr_set)
-            #     self.Next()
 
             # If it doesn't contains a ., it's probably part of the previous set
             elif not '.' == curr_set[-1]:
@@ -160,8 +155,6 @@ class CFG:
         if IdentExists(ident, self.characters):
             raise Exception(f'Ident "{ident}" declared twice!')
 
-        # Are there any keywords?
-        # TODO: Except might be lower case or upper case
         if 'EXCEPT' in value:
             kwd_index = value.index('EXCEPT')
             context = value[kwd_index:]
@@ -171,8 +164,6 @@ class CFG:
         parser = TokenExpression(value, self.characters)
         value = parser.Parse(token_id=ident)
         token = Token(ident, list(value), context)
-        # print()
-        # print(f'{token}')
         self.tokens.append(token)
 
     def KeywordDecl(self, line):
@@ -197,11 +188,7 @@ class CFG:
         key = key.strip()
         set_decl = SetDecl(value, self.characters)
         value = list(set_decl.Set())
-        # print()
-        # print(f'CRUDO:\n{key}: {value}')
         final_set = SetGenerator(value, self.characters).GenerateSet()
-        # print()
-        # print(f'GENERADO\n{key}: {final_set}')
         self.characters.append(Character(key, final_set))
 
     def GenerateSet(self, eval_set):
